@@ -13,33 +13,117 @@ var MIN_X_COORD = 300;
 var MAX_X_COORD = 900;
 var MIN_Y_COORD = 100;
 var MAX_Y_COORD = 500;
-var PIN_WIDTH = 50;
-var PIN_HEIGHT = 70;
+var MAIN_PIN_WIDTH = 65;
+var MAIN_PIN_HEIGHT = 62;
+var PIN_WIDTH = 46;
+var PIN_HEIGHT = 46;
+var MAIN_SHIFT_X = MAIN_PIN_WIDTH / 2;
+var MAIN_SHIFT_Y = MAIN_PIN_HEIGHT;
 var SHIFT_X = PIN_WIDTH / 2;
 var SHIFT_Y = PIN_HEIGHT;
 var MEASURE = 'px';
+var POINTER_HEIGHT = 16; // высота указателя пина
+var PIN_MAIN_HEIGHT;
 var imageId = 0;
+var ESC_KEYCODE = 27;
 
 var offerTitles = ['Большая уютная квартира', 'Маленькая неуютная квартира', 'Огромный прекрасный дворец',
 'Маленький ужасный дворец', 'Красивый гостевой домик', 'Некрасивый негостеприимный домик',
 'Уютное бунгало далеко от моря', 'Неуютное бунгало по колено в воде'];
 var offerTypes = ['flat', 'house', 'bungalo'];
 var offerTypesValues = ['Квартира', 'Дом', 'Бунгало']
+var offerTypeToValue = {
+  'flat': 'Квартира',
+  'house': 'Дом',
+  'bungalo': 'Бунгало'
+}
 var checkinTimes = ['12:00', '13:00', '14:00'];
 var checkoutTimes = ['12:00', '13:00', '14:00'];
 var featuresList = ['wifi', 'dishwasher', 'parking', 'washer', 'elevator', 'conditioner'];
 
-var similarAds = [];
+var pinActive;
+var similarAds = []; // все похожие объявления
+var DOMElement = {}; // объект с массивом всех пинов и попапов
+
+// -------------------
+  var mapFilterElements = document.querySelectorAll('.map__filter');
+  var mapFilterSet = document.querySelector('.map__filter-set');
+
+  [].forEach.call(mapFilterElements, function (filter) {
+    filter.disabled = true;
+  });
+
+  mapFilterSet.disabled = true;
+
+// -------------------
 
 var map = document.querySelector('.map');
 var pinTemplate = document.querySelector('template').content;
-var pin = pinTemplate.querySelector('.map__pin');
-var mapFiltersContainer = map.querySelector('.map__filters-container');
+var mapPin = pinTemplate.querySelector('.map__pin');
 var mapPins = document.querySelector('.map__pins');
+var mapPinMain = map.querySelector('.map__pin--main');
+var mapFiltersContainer = map.querySelector('.map__filters-container');
+var noticeFormElement = document.querySelector('.notice__form');
+var noticeFormFieldsets = noticeFormElement.querySelectorAll('fieldset');
+var inputAddress = noticeFormElement.querySelector('#address');
+PIN_MAIN_HEIGHT = mapPinMain.offsetHeight; // высота главного пина
 
+var onMapPinClick = function (evt) {
+  var activeIndex;
+  var currentPin = evt.currentTarget;
+  hidePopup();
+  pinActive = currentPin;
+  pinActive.classList.add('map__pin--active');
+  activeIndex = getIndex(pinActive);
+  showPopup(activeIndex); // показываем попап с индексом равным активному пину
+}
+
+var getIndex = function (element) {
+  for (var i = 0; i < DOMElement.mapPinElements.length; i++) { // находим среди найденных DOM-элементов текущий активный пин
+    if (DOMElement.mapPinElements[i] === element) {
+      return i; // возвращаем index активного пина
+    }
+  }
+  return -1;
+}
+
+window.util = {
+  isEscEvent: function (evt, cb) {
+    if (evt.keyCode === ESC_KEYCODE) {
+      cb();
+    }
+  }
+}
+
+var onCloseBtnClick = function (evt) {
+  evt.preventDefault();
+  hidePopup();
+}
+
+var onPopupEscPress = function (evt) {
+  window.util.isEscEvent(evt, hidePopup);
+}
+
+var showPopup = function (id) {
+  DOMElement.popupElements[id].classList.remove('hidden');
+  document.addEventListener('keydown', onPopupEscPress);
+}
+
+var hidePopup = function () {
+  DOMElement.popupElements.forEach(function (item) {
+    item.classList.add('hidden');
+  });
+  if (pinActive) {
+    pinActive.classList.remove('map__pin--active');
+  }
+  document.removeEventListener('keydown', onPopupEscPress);
+}
+// ---------------------
 var generateNumber = function (minNumber, maxNumber) {
   return Math.round(Math.random() * (maxNumber - minNumber)) + minNumber;
 };
+
+//------------------
 
 var countImageId = function () {
   imageId++;
@@ -55,20 +139,21 @@ var getTitle = function (titles) {
 
 var getFeatures = function (features) {
   var randomNumber;
+  var featuresListCopy = featuresList.slice();
   var newFeaturesList = [];
-  newFeaturesList.length = generateNumber(1, featuresList.length);
+  newFeaturesList.length = generateNumber(1, featuresListCopy.length);
   for (var i = 0; i < newFeaturesList.length; i++) {
-    randomNumber = generateNumber(0, features.length - 1);
-    newFeaturesList[i] = features[randomNumber];
-    features.splice(randomNumber, 1);
+    randomNumber = generateNumber(0, featuresListCopy.length - 1);
+    newFeaturesList[i] = featuresListCopy[randomNumber];
+    featuresListCopy.splice(randomNumber, 1);
   }
   return newFeaturesList;
 }
 
 var generateAds = function (quantity) {
+  var offerTitlesCopy = offerTitles.slice();
+
   for (var i = 0; i < quantity; i++) {
-    var offerTitlesCopy = offerTitles.slice();
-    var featuresListCopy = featuresList.slice();
     var locationX = generateNumber(MIN_X_COORD, MAX_X_COORD);
     var locationY = generateNumber(MIN_Y_COORD, MAX_Y_COORD);
     var advert = {
@@ -88,7 +173,7 @@ var generateAds = function (quantity) {
         'guests': generateNumber(MIN_NUMBER_GUESTS, MAX_NUMBER_GUESTS),
         'checkin': checkinTimes[generateNumber(0, checkinTimes.length - 1)],
         'checkout': checkoutTimes[generateNumber(0, checkoutTimes.length - 1)],
-        'features': getFeatures(featuresListCopy),
+        'features': getFeatures(featuresList),
         'description': '',
         'photos': ''
       }
@@ -100,30 +185,15 @@ var generateAds = function (quantity) {
 var addPins = function () {
   var pinsFragment = document.createDocumentFragment();
   for (var i = 0; i < similarAds.length; i++) {
-    var mapPin = pin.cloneNode(true);
-    var pinPicture = mapPin.querySelector('img');
-    console.log(similarAds[i].location.x, similarAds[i].location.y);
-    mapPin.style.left = similarAds[i].location.x - PIN_WIDTH / 2 + MEASURE;
-    mapPin.style.top = similarAds[i].location.y - PIN_HEIGHT + MEASURE;
-    console.log(mapPin.style.left, mapPin.style.top);
+    var pin = mapPin.cloneNode(true);
+    var pinPicture = pin.querySelector('img');
+    pin.style.left = similarAds[i].location.x - PIN_WIDTH / 2 + MEASURE;
+    pin.style.top = similarAds[i].location.y - PIN_HEIGHT + MEASURE;
     pinPicture.src = similarAds[i].author.avatar;
 
-    pinsFragment.appendChild(mapPin);
+    pinsFragment.appendChild(pin);
   }
   mapPins.appendChild(pinsFragment);
-}
-
-var getHousingType = function (offerType) {
-  switch (offerType) {
-    case offerTypes[0]:
-      return offerTypesValues[0];
-    case offerTypes[1]:
-      return offerTypesValues[1];
-    case offerTypes[2]:
-      return offerTypesValues[2];
-    default:
-      return 'Неизвестно';
-  }
 }
 
 var removeAllElements = function (items) {
@@ -138,17 +208,19 @@ var addAds = function () {
     var similarAd = similarAds[i];
     var newCard = mapCard.cloneNode(true);
     var popupFeatures = newCard.querySelector('.popup__features');
-    var allFeaturesElements = popupFeatures.querySelectorAll('.popup__feature');
+    var allFeaturesElements = popupFeatures.querySelectorAll('.feature');
     var availableFeatures = createFeaturesFragment(similarAd.offer.features, popupFeatures, allFeaturesElements);
+    var cardCloseBtn = newCard.querySelector('.popup__close');
     newCard.querySelector('.popup__title').textContent = similarAd.offer.title;
     newCard.querySelector('.popup__text--address').textContent = similarAd.offer.address;
     newCard.querySelector('.popup__text--price').innerHTML = similarAd.offer.price + ' &#x20bd;/ночь';
-    newCard.querySelector('.popup__type').textContent = getHousingType(similarAd.offer.type);
+    newCard.querySelector('.popup__type').textContent = offerTypeToValue[similarAd.offer.type] || 'Неизвестно';
     newCard.querySelector('.popup__text--capacity').textContent = similarAd.offer.rooms + ' комнаты для ' + similarAd.offer.guests + ' гостей';
     newCard.querySelector('.popup__text--time').textContent = 'Заезд после ' + similarAd.offer.checkin + ', выезд до ' + similarAd.offer.checkout;
     popupFeatures.appendChild(availableFeatures);
     newCard.querySelector('.popup__description').textContent = similarAd.offer.description;
     newCard.querySelector('.popup__avatar').src = similarAd.author.avatar;
+    cardCloseBtn.addEventListener('click', onCloseBtnClick);
     map.insertBefore(newCard, mapFiltersContainer);
   }
 }
@@ -157,7 +229,7 @@ var createFeaturesFragment = function (features, featuresParent, featuresElement
   var availableFeaturesFragment = document.createDocumentFragment();
   for (var i = 0; i < features.length; i++) {
     for (var j = 0; j < featuresElements.length; j++) {
-      if (featuresElements[j].classList.contains('popup__feature--' + features[i])) {
+      if (featuresElements[j].classList.contains('feature--' + features[i])) {
         availableFeaturesFragment.appendChild(featuresElements[j].cloneNode());
       }
     }
@@ -166,8 +238,55 @@ var createFeaturesFragment = function (features, featuresParent, featuresElement
   return availableFeaturesFragment;
 }
 
-generateAds(ADS_NUMBER);
-addPins();
-addAds();
+var findPinAndPopupElements = function () {
+  DOMElement.mapPinElements = map.querySelectorAll('.map__pin:not(.map__pin--main');
+  DOMElement.popupElements = map.querySelectorAll('.popup');
+};
 
-map.classList.remove('map--faded');
+var addHandler = function (collection) {
+  collection.forEach(function (item) {
+    item.addEventListener('click', onMapPinClick);
+  });
+};
+
+var setDefaultSettings = function () {
+  addHandler(DOMElement.mapPinElements);
+  noticeFormElement.classList.remove('notice__form--disabled');
+  noticeFormFieldsets.forEach(function (fieldset) {
+    fieldset.disabled = false;
+  });
+  [].forEach.call(mapFilterElements, function (filter) {
+    filter.disabled = false;
+  });
+  mapFilterSet.disabled = false;
+  hidePopup();
+};
+
+var changeLocation = function () {
+  inputAddress.value = mapPinMain.offsetLeft + MAIN_SHIFT_X + ', ' + Math.floor(mapPinMain.offsetTop + MAIN_SHIFT_Y + POINTER_HEIGHT);
+}
+
+// первое нажатие на главный пин
+
+var onMapPinMainFirstMouseup = function () {
+  map.classList.remove('map--faded');
+  changeLocation(); // ставим текущие координаты
+  addPins(); // добавляем все элементы в разметку
+  addAds();
+  findPinAndPopupElements(); // находим их в DOM
+  setDefaultSettings();
+  mapPinMain.removeEventListener('mouseup', onMapPinMainFirstMouseup)
+}
+
+mapPinMain.addEventListener('mouseup', onMapPinMainFirstMouseup);
+
+// блокируем поля формы
+noticeFormFieldsets.forEach(function (fieldset) {
+  fieldset.disabled = true;
+});
+
+// изначальные координаты главного пина (без указателя)
+inputAddress.value = Math.ceil(mapPinMain.offsetLeft + MAIN_SHIFT_X) + ', ' + (mapPinMain.offsetTop + MAIN_SHIFT_Y);
+
+// генерируем данные
+generateAds(ADS_NUMBER);

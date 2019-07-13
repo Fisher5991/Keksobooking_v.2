@@ -17,6 +17,17 @@
       if (evt.keyCode === ESC_KEYCODE) {
         cb();
       }
+    },
+
+    getCurrentCoords: function (element) {
+      var box = element.getBoundingClientRect();
+
+      return {
+        top: box.top + pageYOffset,
+        left: box.left + pageXOffset,
+        right: box.right + pageXOffset,
+        bottom: box.bottom + pageYOffset
+      }
     }
   }
 })();

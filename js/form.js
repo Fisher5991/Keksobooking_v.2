@@ -2,11 +2,6 @@
 
 (function () {
   var MAX_ROOMS = 100;
-  var MAIN_PIN_WIDTH = 65;
-  var MAIN_PIN_HEIGHT = 62;
-  var MAIN_SHIFT_X = MAIN_PIN_WIDTH / 2;
-  var MAIN_SHIFT_Y = MAIN_PIN_HEIGHT;
-  var POINTER_HEIGHT = 16; // высота указателя пина
   var map = document.querySelector('.map');
   var pinTemplate = document.querySelector('template').content;
   var mapPin = pinTemplate.querySelector('.map__pin');
@@ -164,13 +159,8 @@
         fieldset.disabled = true;
       });
 
-      addressInput.value = Math.ceil(mapPinMain.offsetLeft + MAIN_SHIFT_X) + ', ' + Math.ceil(mapPinMain.offsetTop + MAIN_SHIFT_Y);
       noticeFormElement.addEventListener('invalid', onFieldInvalid, true);
       noticeFormElement.addEventListener('submit', onNoticeFormSubmit);
-    },
-
-    changeLocation: function () {
-      addressInput.value = Math.floor(mapPinMain.offsetLeft + MAIN_SHIFT_X) + ', ' + Math.floor(mapPinMain.offsetTop + MAIN_SHIFT_Y + POINTER_HEIGHT);
     }
   }
 })();

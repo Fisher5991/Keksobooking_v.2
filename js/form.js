@@ -76,25 +76,36 @@
     }
   }
 
-  var onSelectTimeInChange = function (evt) {
-    var selectedValue = evt.target.value;
-    var dependentElement = timeOutSelect.querySelector('[value="' + selectedValue + '"]');
+  var syncValues = function (target, dependent) {
+    var selectedValue = target.value;
+    var dependentElement = dependent.querySelector('[value="' + selectedValue + '"]');
     dependentElement.selected = true;
+  }
+
+  var syncValueWithMin = function (target, dependent, extra) {
+    var selectedText = target.selectedOptions[0].textContent;
+    dependent.min = extra[selectedText];
+  }
+
+  var syncValueWithValues = function (target, dependents, actualize) {
+    var selectedValue = target.value;
+    actualize(selectedValue, dependents);
+  }
+
+  var onSelectTimeInChange = function (evt) {
+    window.synchronizeFields(evt.target, timeOutSelect, syncValues);
   }
 
   var onSelectTimeOutChange = function (evt) {
-    var selectedValue = evt.target.value;
-    var dependentElement = timeInSelect.querySelector('[value="' + selectedValue + '"]');
-    dependentElement.selected = true;
+    window.synchronizeFields(evt.target, timeInSelect, syncValues);
   }
 
   var onSelectTypeChange = function (evt) {
-    var selectedText = evt.target.selectedOptions[0].textContent;
-    priceInput.min = offerValueToMinPrice[selectedText];
+    window.synchronizeFields(evt.target, priceInput, syncValueWithMin, offerValueToMinPrice);
   }
 
-  var actualizeRoomNumberSelectOption = function (selectedValue) {
-    [].forEach.call(capacityOptions, function (option) {
+  var actualizeRoomNumberSelectOption = function (selectedValue, dependents) {
+    [].forEach.call(dependents, function (option) {
       if ((+selectedValue < +option.value) || ((+selectedValue === MAX_ROOMS) && (+option.value !== 0)) || ((+selectedValue !== MAX_ROOMS) && (+option.value === 0))) {
         option.disabled = true;
         option.selected = false;
@@ -106,15 +117,14 @@
   }
 
   var onSelectRoomNumberChange = function (evt) {
-    var selectedValue = evt.target.value;
-    actualizeRoomNumberSelectOption(selectedValue);
+    window.synchronizeFields(evt.target, capacityOptions, syncValueWithValues, actualizeRoomNumberSelectOption);
   }
 
   var synchronizeSelect = function () {
     var initialSelectedTypeText = typeSelect.selectedOptions[0].textContent;
     var initialSelectedRoomNumber = roomNumberSelect.selectedOptions[0].value;
     priceInput.min = offerValueToMinPrice[initialSelectedTypeText];
-    actualizeRoomNumberSelectOption(initialSelectedRoomNumber);
+    actualizeRoomNumberSelectOption(initialSelectedRoomNumber, capacityOptions);
     timeInSelect.addEventListener('change', onSelectTimeInChange);
     timeOutSelect.addEventListener('change', onSelectTimeOutChange);
     typeSelect.addEventListener('change', onSelectTypeChange);

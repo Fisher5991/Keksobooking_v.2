@@ -29,20 +29,32 @@
     window.map.DOMElements.popup = map.querySelectorAll('.popup');
   };
 
-  var changeLocation = function (x, y) {
-    addressInput.value = x + ', ' + y;
+  var errorHandler = function (errorMessage) {
+    var node = document.createElement('div');
+    node.style = 'z-index: 100; margin: 0 auto; text-align: center; background-color: red;';
+    node.style.position = 'absolute';
+    node.style.left = 0;
+    node.style.right = 0;
+    node.style.fontSize = '30px';
+
+    node.textContent = errorMessage;
+    document.body.insertAdjacentElement('afterbegin', node);
+  }
+
+  var addElements = function (similarAds) {
+    window.pin.add(similarAds); // добавляем все элементы в разметку
+    window.card.add(similarAds);
+    findPinAndPopup(); // находим их в DOM
+    window.pin.addHandler();
+    window.togglePopup.close();
   }
 
   // первое нажатие на главный пин
 
   var onMapPinMainFirstMouseup = function () {
     map.classList.remove('map--faded');
-    window.pin.add(similarAds); // добавляем все элементы в разметку
-    window.card.add(similarAds);
-    findPinAndPopup(); // находим их в DOM
-    window.pin.addHandler();
+    window.backend.load(addElements, errorHandler);
     window.form.makeAvailable();
-    window.togglePopup.close();
     mapPinMain.removeEventListener('mouseup', onMapPinMainFirstMouseup);
   }
 
@@ -85,7 +97,7 @@
         mapPinMain.style.top = offsetY + 'px';
       }
 
-      changeLocation(xValue, yValue);
+      window.form.changeLocation(xValue, yValue);
     }
 
     var onMapPinMainMouseup = function (upEvt) {
@@ -98,14 +110,13 @@
     document.addEventListener('mouseup', onMapPinMainMouseup);
   }
 
-  var similarAds = window.data.generateAds();
   window.map = {}; // объект с массивом всех пинов и попапов
   window.map.DOMElements = {}
 
   mapPinMain.addEventListener('mouseup', onMapPinMainFirstMouseup);
 
+  window.form.changeLocation(Math.ceil(mapPinMain.offsetLeft + MAIN_SHIFT_X), Math.ceil(mapPinMain.offsetTop + MAIN_SHIFT_Y));
   window.form.setDefaultSettings();
-  addressInput.value = Math.ceil(mapPinMain.offsetLeft + MAIN_SHIFT_X) + ', ' + Math.ceil(mapPinMain.offsetTop + MAIN_SHIFT_Y);
 
   mapPinMain.addEventListener('mousedown', onMapPinMainMousedown);
 })();

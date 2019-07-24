@@ -17,10 +17,16 @@
   var roomNumberSelect = noticeFormElement.querySelector('#room_number');
   var capacitySelect = noticeFormElement.querySelector('#capacity');
   var capacityOptions = capacitySelect.querySelectorAll('option');
+  var formReset = noticeFormElement.querySelector('.form__reset');
   var invalidFlag = 0;
 
   var mapFilterElements = document.querySelectorAll('.map__filter');
   var mapFilterSet = document.querySelector('.map__filter-set');
+
+  var initialSelectedTypeText = typeSelect.selectedOptions[0].textContent;
+  var initialSelectedRoomNumber = roomNumberSelect.selectedOptions[0].value;
+
+  var currentCoordsValue;
 
   var offerValueToMinPrice = {
     'Лачуга': 0,
@@ -59,9 +65,46 @@
   }
 
   var onNoticeFormSubmit = function (evt) {
-    if (!checkTitleMinLength()) {
-      evt.preventDefault();
+    if (checkTitleMinLength()) {
+      var formData = new FormData(noticeFormElement);
+      window.backend.upload(formData, resetForm, errorHandler);
     }
+
+    evt.preventDefault();
+  }
+
+  var errorHandler = function (errorMessage) {
+    var node = document.createElement('div');
+    node.style = 'z-index: 100; margin: 0 auto; text-align: center; background-color: red;';
+    node.style.position = 'absolute';
+    node.style.left = 0;
+    node.style.right = 0;
+    node.style.fontSize = '30px';
+
+    node.textContent = errorMessage;
+    document.body.insertAdjacentElement('afterbegin', node);
+  }
+
+  var resetForm = function () {
+    currentCoordsValue = addressInput.value;
+    noticeFormElement.reset();
+    setDefaultValue();
+    addressInput.value = currentCoordsValue;
+  }
+
+  var onFormResetClick = function (evt) {
+    evt.preventDefault();
+    resetForm();
+  }
+
+  var synchronizeSelect = function () {
+    priceInput.min = offerValueToMinPrice[initialSelectedTypeText];
+    actualizeRoomNumberSelectOption(initialSelectedRoomNumber, capacityOptions);
+  }
+
+  var setDefaultValue = function () {
+    synchronizeSelect();
+    priceInput.value = '' + LimitationInput.price.DEFAULT;
   }
 
   var checkTitleMinLength = function () {
@@ -120,17 +163,6 @@
     window.synchronizeFields(evt.target, capacityOptions, syncValueWithValues, actualizeRoomNumberSelectOption);
   }
 
-  var synchronizeSelect = function () {
-    var initialSelectedTypeText = typeSelect.selectedOptions[0].textContent;
-    var initialSelectedRoomNumber = roomNumberSelect.selectedOptions[0].value;
-    priceInput.min = offerValueToMinPrice[initialSelectedTypeText];
-    actualizeRoomNumberSelectOption(initialSelectedRoomNumber, capacityOptions);
-    timeInSelect.addEventListener('change', onSelectTimeInChange);
-    timeOutSelect.addEventListener('change', onSelectTimeOutChange);
-    typeSelect.addEventListener('change', onSelectTypeChange);
-    roomNumberSelect.addEventListener('change', onSelectRoomNumberChange);
-  }
-
   window.form = {
     makeAvailable: function () {
       noticeFormElement.classList.remove('notice__form--disabled');
@@ -149,12 +181,16 @@
       priceInput.type = 'number';
       priceInput.min = '' + LimitationInput.price.MIN;
       priceInput.max = '' + LimitationInput.price.MAX;
-      priceInput.value = '' + LimitationInput.price.DEFAULT;
       priceInput.required = true;
-      synchronizeSelect();
       noticeFormElement.action = 'https://js.dump.academy/keksobooking';
       noticeFormElement.method = 'post';
       noticeFormElement.enctype = 'multipart/form-data';
+      setDefaultValue();
+      timeInSelect.addEventListener('change', onSelectTimeInChange);
+      timeOutSelect.addEventListener('change', onSelectTimeOutChange);
+      typeSelect.addEventListener('change', onSelectTypeChange);
+      roomNumberSelect.addEventListener('change', onSelectRoomNumberChange);
+      formReset.addEventListener('click', onFormResetClick);
     },
 
     setDefaultSettings: function () {
@@ -171,6 +207,10 @@
 
       noticeFormElement.addEventListener('invalid', onFieldInvalid, true);
       noticeFormElement.addEventListener('submit', onNoticeFormSubmit);
+    },
+
+    changeLocation: function (x, y) {
+      addressInput.value = x + ', ' + y;
     }
   }
 })();

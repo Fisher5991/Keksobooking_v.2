@@ -64,15 +64,6 @@
     }
   }
 
-  var onNoticeFormSubmit = function (evt) {
-    if (checkTitleMinLength()) {
-      var formData = new FormData(noticeFormElement);
-      window.backend.upload(formData, resetForm, errorHandler);
-    }
-
-    evt.preventDefault();
-  }
-
   var errorHandler = function (errorMessage) {
     var node = document.createElement('div');
     node.style = 'z-index: 100; margin: 0 auto; text-align: center; background-color: red;';
@@ -83,6 +74,15 @@
 
     node.textContent = errorMessage;
     document.body.insertAdjacentElement('afterbegin', node);
+  }
+
+  var onNoticeFormSubmit = function (evt) {
+    if (checkTitleMinLength()) {
+      var formData = new FormData(noticeFormElement);
+      window.backend.upload(formData, resetForm, errorHandler);
+    }
+
+    evt.preventDefault();
   }
 
   var resetForm = function () {

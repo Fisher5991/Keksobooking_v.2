@@ -1,6 +1,7 @@
 'use strict';
 (function () {
   var ESC_KEYCODE = 27;
+  var lastTimeout;
 
   window.utils = {
     generateNumber: function (minNumber, maxNumber) {
@@ -8,7 +9,7 @@
     },
 
     removeAllElements: function (items) {
-      items.forEach(function (item) {
+      [].forEach.call(items, function (item) {
         item.remove();
       });
     },
@@ -28,6 +29,16 @@
         right: box.right + pageXOffset,
         bottom: box.bottom + pageYOffset
       }
+    },
+
+    stopDebounce: function (cb, time, arg) {
+      if (lastTimeout) {
+        clearTimeout(lastTimeout);
+      }
+
+      lastTimeout = setTimeout(function () {
+        cb(arg);
+      }, time);
     }
   }
 })();

@@ -32,6 +32,8 @@
   window.card = {
     add: function (ads, elements) {
       var mapCard = pinTemplate.querySelector('.map__card');
+      var currentCards = map.querySelectorAll('.map__card');
+      window.utils.removeAllElements(currentCards);
 
       for (var i = 0; i < ads.length; i++) {
         var similarAd = ads[i];

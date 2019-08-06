@@ -1,6 +1,7 @@
 'use strict';
 
 (function () {
+  var MAX_ADS = 5;
   var MAIN_PIN_WIDTH = 65;
   var MAIN_PIN_HEIGHT = 65;
   var mapPinsElement = document.querySelector('.map__pins');
@@ -41,19 +42,18 @@
     document.body.insertAdjacentElement('afterbegin', node);
   }
 
-  var addElements = function (similarAds) {
-    window.pin.add(similarAds); // добавляем все элементы в разметку
-    window.card.add(similarAds);
-    findPinAndPopup(); // находим их в DOM
-    window.pin.addHandler();
-    window.togglePopup.close();
+  var saveData = function (data) {
+    var similarAdsCopy;
+    window.filters.transferData(data);
+    similarAdsCopy = data.slice();
+    window.map.updatePins(similarAdsCopy);
   }
 
   // первое нажатие на главный пин
 
   var onMapPinMainFirstMouseup = function () {
     map.classList.remove('map--faded');
-    window.backend.load(addElements, errorHandler);
+    window.backend.load(saveData, errorHandler);
     window.form.makeAvailable();
     mapPinMain.removeEventListener('mouseup', onMapPinMainFirstMouseup);
   }
@@ -110,8 +110,20 @@
     document.addEventListener('mouseup', onMapPinMainMouseup);
   }
 
-  window.map = {}; // объект с массивом всех пинов и попапов
-  window.map.DOMElements = {}
+  window.map = {
+    DOMElements: {},
+
+    updatePins: function (similarAds) {
+      if (similarAds.length > MAX_ADS) {
+        similarAds.length = MAX_ADS;
+      }
+      window.pin.add(similarAds); // добавляем все элементы в разметку
+      window.card.add(similarAds);
+      findPinAndPopup(); // находим их в DOM
+      window.pin.addHandler();
+      window.togglePopup.close();
+    }
+  }
 
   mapPinMain.addEventListener('mouseup', onMapPinMainFirstMouseup);
 

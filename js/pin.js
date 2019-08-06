@@ -33,6 +33,8 @@
   window.pin = {
     add: function (ads) {
       var pinsFragment = document.createDocumentFragment();
+      var currentPins = mapPins.querySelectorAll('.map__pin:not(.map__pin--main');
+      window.utils.removeAllElements(currentPins);
 
       for (var i = 0; i < ads.length; i++) {
         var pin = mapPin.cloneNode(true);
